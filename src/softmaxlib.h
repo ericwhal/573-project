@@ -14,6 +14,6 @@ static volatile float *ACCEL_MEM_END   = (volatile float*)(0xBFFFFFFC);
 static unsigned ACCEL_MEM_CAPACITY = (unsigned)(0xC0000000 - 0xB0000000)/4;
 
 // Library functions
-unsigned softmax_allocate (softmax_ctrl_struct *user_data, unsigned count);
+unsigned softmax_allocate (      softmax_ctrl_struct *user_data, unsigned count);
 void     softmax_execute  (const softmax_ctrl_struct *user_data, unsigned count);
 unsigned softmax_test_done();
