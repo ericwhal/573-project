@@ -8,7 +8,7 @@ unsigned softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   return allocated;
 }
 
-void softmax_execute(softmax_ctrl_struct *user_data, unsigned count) {
+void softmax_execute(const softmax_ctrl_struct *user_data, unsigned count) {
   *DST_PTR_REG = user_data->dest;
   *SRC_PTR_REG = user_data->src;
   *CTRL_REG    = (count | (1 << 31));
