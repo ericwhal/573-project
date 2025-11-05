@@ -1,0 +1,3 @@
+[submodule "573-gem5"]
+	path = 573-gem5
+	url = git@github.com:emilyyysu/573-gem5.git
