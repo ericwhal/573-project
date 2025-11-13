@@ -1,4 +1,7 @@
 #pragma once
+// useful typedefs
+typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
 
 // user struct
 typedef struct {volatile float *src, *dest;} softmax_ctrl_struct;
@@ -17,3 +20,10 @@ static unsigned ACCEL_MEM_CAPACITY = (unsigned)(0xC0000000 - 0xB0000000)/4;
 unsigned softmax_allocate (      softmax_ctrl_struct *user_data, unsigned count);
 void     softmax_execute  (const softmax_ctrl_struct *user_data, unsigned count);
 unsigned softmax_test_done();
+
+// Utility functions for -nostdlib
+void print_str(const char*);
+void print_hex(uint32_t);
+
+// Things we need for compiling with -nostdlib
+int main();

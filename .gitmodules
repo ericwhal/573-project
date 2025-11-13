@@ -1,7 +1,7 @@
+[submodule "riscv-gnu-toolchain"]
+	path = riscv-gnu-toolchain
+	url = git@github.com:riscv-collab/riscv-gnu-toolchain.git
 [submodule "573-gem5"]
 	path = 573-gem5
 	url = git@github.com:emilyyysu/573-gem5.git
 	branch = accel
-[submodule "riscv-gnu-toolchain"]
-	path = riscv-gnu-toolchain
-	url = git@github.com:riscv-collab/riscv-gnu-toolchain.git
