@@ -1,17 +1,19 @@
 #include "softmaxlib.h"
 
-unsigned softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
-  if(!softmax_test_done()) return 0;
-  unsigned allocated = ACCEL_MEM_CAPACITY - count < count ? ACCEL_MEM_CAPACITY : count;
-  user_data->src = ACCEL_MEM_BEGIN;
+int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
+  // if(!softmax_test_done()) return -1;
+  int allocated = ACCEL_MEM_CAPACITY < count ? ACCEL_MEM_CAPACITY : count;
+  user_data->src  = ACCEL_MEM_BEGIN;
   user_data->dest = ACCEL_MEM_BEGIN;
-  return allocated;
+
+  // return allocated;
+  return count;
 }
 
 void softmax_execute(const softmax_ctrl_struct *user_data, unsigned count) {
   *DST_PTR_REG = user_data->dest;
   *SRC_PTR_REG = user_data->src;
-  *CTRL_REG    = (count | (1 << 31));
+  *CTRL_REG    = (count*sizeof(float)) | (1 << 31);
 }
 
 unsigned softmax_test_done() {
@@ -47,8 +49,9 @@ void print_hex(uint32_t val)
 
 // Spoof _start() to just call main() as if it were A-OK
 void _start() {
+  // Execute main, print result
   print_hex((unsigned)main());
+
   // exit(0)
   asm volatile("li a7, 93\nli a0, 0\necall");
-  
 }
