@@ -1,2 +1,3 @@
 build/**
 riscv32-unknown-gnu-linux/**
+riscv64-unknown-gnu-linux/**
