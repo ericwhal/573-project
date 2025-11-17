@@ -1,7 +1,6 @@
 #pragma once
 // useful typedefs
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
+#include <stdint.h>
 
 // user struct
 typedef struct {volatile float *src, *dest;} softmax_ctrl_struct;

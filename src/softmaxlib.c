@@ -1,4 +1,5 @@
 #include "softmaxlib.h"
+#include <gem5/m5ops.h>
 
 int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   // if(!softmax_test_done()) return -1;
@@ -49,9 +50,21 @@ void print_hex(uint32_t val)
 
 // Spoof _start() to just call main() as if it were A-OK
 void _start() {
-  // Execute main, print result
-  print_hex((unsigned)main());
+  // Execute main as 0th ROI, print result
+  print_str("_start()\n");
 
+  m5_work_begin(0, 0);
+  m5_dump_stats(0, 0);
+
+  unsigned main_result = (unsigned) main();
+
+  m5_dump_stats(0, 0);
+  m5_work_end(0, 0);
+
+  print_str("exit: ");
+  print_hex(main_result);
+
+  m5_exit(main_result);
   // exit(0)
-  asm volatile("li a7, 93\nli a0, 0\necall");
+  // asm volatile("li a7, 93\nli a0, 0\necall");
 }
