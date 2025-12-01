@@ -5,6 +5,7 @@
     name = "ece573-project-FHS";
     targetPkgs = pkgs: (with pkgs; [
       pkg-config
+      dtc ncurses5 cdk
       gcc glibc boost scons pre-commit protobuf_21 protobufc gperftools hdf5 hdf5-cpp gnum4 capstone libpng libelf wget cmake doxygen clang-tools
       curl libmpc mpfr gmp texinfo gperf patchutils bc zlib expat libslirp flex bison
       python313 ] ++ (with python313Packages; [
@@ -15,7 +16,7 @@
         mypy
         tkinter
         pkgconfig
-	protobuf
+        protobuf
       ])
     );
     runScript = "bash";
