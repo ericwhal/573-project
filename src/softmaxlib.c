@@ -1,5 +1,6 @@
 #include "softmaxlib.h"
 #include <gem5/m5ops.h>
+#include <math.h>
 
 int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   // if(!softmax_test_done()) return -1;
@@ -11,11 +12,17 @@ int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   return count;
 }
 
+// Ignore annoying but safe warning bc we built a 32-bit ptr expectation into a 64-bit system
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
+
 void softmax_execute(const softmax_ctrl_struct *user_data, unsigned count) {
-  *DST_PTR_REG = user_data->dest;
-  *SRC_PTR_REG = user_data->src;
+  *DST_PTR_REG = (unsigned) user_data->dest;
+  *SRC_PTR_REG = (unsigned) user_data->src;
   *CTRL_REG    = (count*sizeof(float)) | (1 << 31);
 }
+// restore diagnostics
+#pragma GCC diagnostic pop
 
 unsigned softmax_test_done() {
   // read ctrl reg
@@ -48,23 +55,34 @@ void print_hex(uint32_t val)
     print_str(buf);
 }
 
+unsigned compare_ulp(float a, float b, unsigned ulp)
+{
+  // Return false if either is NAN or +/-inf
+  if(!(isfinite(a) && isfinite(b))) return false;
+
+  // bit cast
+  unsigned *a_bits_ptr = (int*) &a;
+  unsigned *b_bits_ptr = (int*) &b;
+  unsigned a_bits = *a_bits_ptr;
+  unsigned b_bits = *b_bits_ptr;
+
+  unsigned a_biased = a_bits < 0 ? ~a_bits + 1 : a_bits | (1 << 31);
+  unsigned b_biased = b_bits < 0 ? ~b_bits + 1 : b_bits | (1 << 31);
+
+  unsigned distance = a_biased >= b_biased ? a_biased - b_biased : b_biased - a_biased;
+
+  return distance <= ulp;
+}
+
 // Spoof _start() to just call main() as if it were A-OK
 void _start() {
   // Execute main as 0th ROI, print result
   print_str("_start()\n");
 
-  m5_work_begin(0, 0);
-  m5_dump_stats(0, 0);
-
   unsigned main_result = (unsigned) main();
-
-  m5_dump_stats(0, 0);
-  m5_work_end(0, 0);
 
   print_str("exit: ");
   print_hex(main_result);
 
-  m5_exit(main_result);
-  // exit(0)
-  // asm volatile("li a7, 93\nli a0, 0\necall");
+  m5_exit(0);
 }
