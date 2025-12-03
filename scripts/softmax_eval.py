@@ -1,5 +1,7 @@
 import os
+import re
 import json
+import shutil
 import struct
 import subprocess
 import multiprocessing
@@ -42,7 +44,7 @@ reportfile = os.path.join(buildpath, "stats.csv")
 # Write the csv header to the report file
 # Ordered as accel, naive
 with open(reportfile, 'w') as f:
-    f.write("name,record,system.cpu.numCycles,simInsts,simOps,system.cpu.numCycles,simInsts,simOps")
+    f.write("name,record,system.cpu.numCycles,simInsts,simOps,system.cpu.numCycles,simInsts,simOps,exit_code")
 
 source_datapaths = [os.path.join(databasedir, datadir) for datadir in datadirs]
 main_file = os.path.join(srcpath, "eval_main.c")
@@ -52,8 +54,10 @@ compiler_flags = '-static -nostdlib -O2'
 ld_flags = ' '.join(['-L' + path for path in [m5_ld_path]])
 libs = ' '.join(['-lm', '-lc','-lm5'])
 
-def get_records(logits, probs, num_records):
-    for record in range(num_records):
+def get_records(logits, probs, num_records, max_records=100):
+    if max_records is None:
+        max_records = num_records
+    for record in range(min(max_records,num_records)):
         # 32 bits of length
         # 32 bits of meta
         logits_length = int.from_bytes(logits.read(4), byteorder='little')
@@ -69,42 +73,64 @@ def get_records(logits, probs, num_records):
         yield record, logits_length, logits_floats, probs_floats
 
 
-workdirs = set()
-def parallel_worker(*args):
-        # unpack args
-        record, record_len, logit_record, prob_record = args        
+# These get *copied* to the parallel_worker context!
+exit_code_re = re.compile(r'exit: (0x[0-9A-Fa-f]{8})')
+crashing_files = set()
+def parallel_worker(*args, datapath=None):
+    # early exits
+    if datapath is None:
+        return None
+    if os.path.basename(datapath) in crashing_files:
+        return None
 
-        # make sure threadlocaldir exists
-        thread_id = str(multiprocessing.current_process().pid)
-        threadlocaldir = os.path.normpath(os.path.join(buildpath, thread_id))
-        os.makedirs(threadlocaldir, exist_ok=True)
-        workdirs.add(threadlocaldir)
+    # unpack args
+    record, record_len, logit_record, prob_record = args
 
-        with open(os.path.join(threadlocaldir, 'data.h'), 'w') as header:
-            header.write(f'int data_length = {record_len};\n')
-            header.write(f'float logits[{len(logit_record)}] =' + '{' + ', '.join([str(f) for f in logit_record]) + '};\n')
-            header.write(f'float probs[{len(prob_record)}] =' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
+    # make sure threadlocaldir exists
+    thread_id = str(multiprocessing.current_process().pid)
+    threadlocaldir = os.path.normpath(os.path.join(buildpath, thread_id))
+    os.makedirs(threadlocaldir, exist_ok=True)
 
-        build_file = os.path.join(threadlocaldir, f'eval')
-        include_flags = ' '.join(['-I' + path for path in [threadlocaldir, srcpath, gem5_include_path]])
+    with open(os.path.join(threadlocaldir, 'data.h'), 'w') as header:
+        header.write(f'int data_length = {record_len};\n')
+        header.write(f'float logits[{len(logit_record)}] =' + '{' + ', '.join([str(f) for f in logit_record]) + '};\n')
+        header.write(f'float probs[{len(prob_record)}] =' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
 
-        # With the header generated, compile the eval program
-        compile_command = f"riscv64-unknown-linux-gnu-gcc {include_flags} {ld_flags} {compiler_flags} {softmaxlib_file} {main_file} {libs} -o {build_file}";
-        subprocess.run(compile_command, shell=True)
+    build_file = os.path.join(threadlocaldir, f'eval')
+    include_flags = ' '.join(['-I' + path for path in [threadlocaldir, srcpath, gem5_include_path]])
 
-        # prep reportfile with record & datapath after compile
-        strs = [os.path.basename(datapath), str(record)]
-        localreportfile = os.path.join(threadlocaldir, "stats.csv")
-        with open(localreportfile, 'a+') as f:
-            f.write('\n')
-            f.write(','.join(strs))
+    # With the header generated, compile the eval program
+    compile_command = f"riscv64-unknown-linux-gnu-gcc {include_flags} {ld_flags} {compiler_flags} {softmaxlib_file} {main_file} {libs} -o {build_file}";
+    subprocess.run(compile_command, shell=True)
 
-        # run gem5
-        subprocess.run([gem5_command], shell=True, cwd=threadlocaldir)
+    # prep reportfile with record & datapath after compile
+    strs = [os.path.basename(datapath), str(record)]
+    localreportfile = os.path.join(threadlocaldir, "stats.csv")
+    with open(localreportfile, 'a+') as f:
+        f.write('\n')
+        f.write(','.join(strs))
+
+    # run gem5
+    result = subprocess.run([gem5_command], shell=True, cwd=threadlocaldir, capture_output=True, text=True)
+    exit_code = exit_code_re.search(result.stdout)
+    with open(localreportfile, 'a+') as f:
+        if exit_code is None:
+          f.write(','*7+'CRASHED')
+          if os.path.basename(datapath) in crashing_files:
+              return threadlocaldir
+          crashing_files.add(os.path.basename(datapath))
+          print('========== BAD EXIT ==========')
+          print(result.stdout)
+          print(result.stderr)
+          print('==============================')
+        else:
+          f.write(',' + exit_code.group(1))
+    return threadlocaldir
 
 
-
-
+#==================================================
+# Main
+#==================================================
 # iterate over workload types
 for datapath in source_datapaths:
     logit_filepath = os.path.join(datapath, "logits.bin")
@@ -116,18 +142,27 @@ for datapath in source_datapaths:
          open(manifest_filepath, 'r') as manifest_file:
         num_records = json.load(manifest_file)['count']
 
-        print('\nProcessing', datapath, f'with {num_records} records', end=' ')
+        print('Processing', datapath, f'with {num_records} records')
 
         # parallelize over records
-        with multiprocessing.Pool(5) as p:
-            p.starmap(parallel_worker, get_records(logit_file, probs_file, num_records), chunksize=50)
+        def parallel_worker_wrap(*x):
+            return parallel_worker(*x, datapath=datapath)
 
-        with open(reportfile, 'a') as report:
+        with multiprocessing.Pool(None) as p:
+            workdirs = set(p.starmap(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=None), chunksize=50))
+        print('Done work in:')
+        print(workdirs)
+        print('-------------')
+
+        with open(reportfile, 'a+') as report:
             for d in workdirs:
+                if d is None:
+                    continue
+                print(f'Collecting from {d}')
                 csv = os.path.join(d, 'stats.csv')
                 with open(csv, 'r') as csv:
-                    lines = [line for line in csv.readlines() if len(line) > 1]
-                report.writelines(lines)
+                    data = csv.read()
+                report.write(data)
 
                 # remove the workdir
                 shutil.rmtree(d)
