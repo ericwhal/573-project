@@ -2,6 +2,9 @@
 #include <gem5/m5ops.h>
 #include <math.h>
 
+// We just need this symbol defined for math.h
+unsigned __errno;
+
 int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   // if(!softmax_test_done()) return -1;
   int allocated = ACCEL_MEM_CAPACITY < count ? ACCEL_MEM_CAPACITY : count;
@@ -58,7 +61,7 @@ void print_hex(uint32_t val)
 unsigned compare_ulp(float a, float b, unsigned ulp)
 {
   // Return false if either is NAN or +/-inf
-  if(!(isfinite(a) && isfinite(b))) return false;
+  if(!(isfinite(a) && isfinite(b))) return 1;
 
   // bit cast
   unsigned *a_bits_ptr = (int*) &a;

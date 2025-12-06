@@ -44,7 +44,7 @@ reportfile = os.path.join(buildpath, "stats.csv")
 # Write the csv header to the report file
 # Ordered as accel, naive
 with open(reportfile, 'w') as f:
-    f.write("name,record,system.cpu.numCycles,simInsts,simOps,system.cpu.numCycles,simInsts,simOps,exit_code")
+    f.write("name,record,record_len,accel-system.cpu.numCycles,accel-simInsts,accel-simOps,naive-system.cpu.numCycles,naive-simInsts,naive-simOps,exit_code")
 
 source_datapaths = [os.path.join(databasedir, datadir) for datadir in datadirs]
 main_file = os.path.join(srcpath, "eval_main.c")
@@ -52,7 +52,7 @@ softmaxlib_file = os.path.join(srcpath, "softmaxlib.c")
 
 compiler_flags = '-static -nostdlib -O2'
 ld_flags = ' '.join(['-L' + path for path in [m5_ld_path]])
-libs = ' '.join(['-lm', '-lc','-lm5'])
+libs = ' '.join(['-lm', '-lc', '-lm5'])
 
 def get_records(logits, probs, num_records, max_records=100):
     if max_records is None:
@@ -104,7 +104,7 @@ def parallel_worker(*args, datapath=None):
     subprocess.run(compile_command, shell=True)
 
     # prep reportfile with record & datapath after compile
-    strs = [os.path.basename(datapath), str(record)]
+    strs = [os.path.basename(datapath), str(record), str(record_len)]
     localreportfile = os.path.join(threadlocaldir, "stats.csv")
     with open(localreportfile, 'a+') as f:
         f.write('\n')
@@ -115,14 +115,20 @@ def parallel_worker(*args, datapath=None):
     exit_code = exit_code_re.search(result.stdout)
     with open(localreportfile, 'a+') as f:
         if exit_code is None:
-          f.write(','*7+'CRASHED')
+          f.write(','*8+'CRASHED')
           if os.path.basename(datapath) in crashing_files:
               return threadlocaldir
           crashing_files.add(os.path.basename(datapath))
           print('========== BAD EXIT ==========')
+          print(f'[!] Record {record} with len {record_len} failed!')
+          print('[!] compile command, stdout & stderr below')
+          print('------------------------------')
+          print(compile_command)
+          print('------------------------------')
           print(result.stdout)
+          print('------------------------------')
           print(result.stderr)
-          print('==============================')
+          print('==============================', True)
         else:
           f.write(',' + exit_code.group(1))
     return threadlocaldir

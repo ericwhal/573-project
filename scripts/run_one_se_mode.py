@@ -27,7 +27,6 @@ m5outdir = os.path.join(thispath, "m5out/")
 m5statsfile = os.path.join(m5outdir, "stats.txt")
 reportfile = os.path.join(thispath, "stats.csv")
 binary = os.path.join(thispath, "eval")
-print(thispath)
 
 # --- Workload ---
 system = System()
@@ -93,3 +92,4 @@ with open(reportfile, 'a+') as f:
     f.write(',')
     f.write(','.join(strs))
 
+print(flush=True)
