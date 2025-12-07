@@ -125,7 +125,7 @@
                     "enable_rvv": true,
                     "eventq_index": 0,
                     "privilege_mode_set": "MSU",
-                    "riscv_type": "RV32",
+                    "riscv_type": "RV64",
                     "vlen": 256,
                     "wfi_resume_on_pending": false
                 }
@@ -280,7 +280,7 @@
                     "name": "workload",
                     "path": "system.cpu.workload",
                     "cmd": [
-                        "/media/oldhdd/573-project/573-gem5/src/dev/acc/../../../../build/big_test"
+                        "/media/oldhdd/573-project/573-gem5/src/dev/acc/../../../cycle_test.elf"
                     ],
                     "cwd": "/media/oldhdd/573-project",
                     "drivers": [],

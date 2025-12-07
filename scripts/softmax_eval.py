@@ -47,7 +47,7 @@ reportfile = os.path.join(buildpath, "stats.csv")
 # Write the csv header to the report file
 # Ordered as accel, naive
 with open(reportfile, 'w') as f:
-    f.write("name,record,record_len,accel-system.cpu.numCycles,accel-simInsts,accel-simOps,naive-system.cpu.numCycles,naive-simInsts,naive-simOps,exit_code")
+    f.write("name,record,record_len,accel-system.cpu.numCycles,accel-simInsts,accel-simOps,accel-zeroCount,accel-sameAdd,accel-switchingAdd,accel-sameDiv,accel-switchingDiv,naive-system.cpu.numCycles,naive-simInsts,naive-simOps,naive-zeroCount,naive-sameAdd,naive-switchingAdd,naive-sameDiv,naive-switchingDiv,exit_code")
 
 source_datapaths = [os.path.join(databasedir, datadir) for datadir in datadirs]
 main_file = os.path.join(srcpath, "eval_main.c")
@@ -118,7 +118,7 @@ def parallel_worker(*args, datapath=None):
     exit_code = exit_code_re.search(result.stdout)
     with open(localreportfile, 'a+') as f:
         if exit_code is None:
-          f.write(','*8+'CRASHED')
+          f.write(','*16+'CRASHED')
           if os.path.basename(datapath) in crashing_files:
               return threadlocaldir
           crashing_files.add(os.path.basename(datapath))
@@ -158,21 +158,19 @@ for datapath in source_datapaths:
 
         print('Processing', datapath, f'with {num_records} records')
 
-        # parallelize over records
-        def parallel_worker_wrap(*x):
+        # parallelize over records. Unpack x (we know it's a tuple returned from get_records)
+        def parallel_worker_wrap(x):
             return parallel_worker(*x, datapath=datapath)
 
+        # Using the unordered imap lazily consumes from get_records, which in turn enables tqdm to track time accurately. Starmap isn't lazy.
         with multiprocessing.Pool(None) as p:
-            workdirs = set(p.starmap(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=max_records), chunksize=50 if max_records is None else max(1, max_records//16)))
-        print('Done work in:')
-        print(workdirs)
-        print('-------------')
+            workdirs = set(p.imap_unordered(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=max_records), chunksize=50 if max_records is None else max(1, max_records//16)))
 
+        print(f'Collecting data from {len(workdirs) - (1 if None in workdirs else 0)} workers')
         with open(reportfile, 'a+') as report:
-            for d in workdirs:
+            for d in tqdm.tqdm(workdirs):
                 if d is None:
                     continue
-                print(f'Collecting from {d}')
                 csv = os.path.join(d, 'stats.csv')
                 with open(csv, 'r') as csv:
                     data = csv.read()

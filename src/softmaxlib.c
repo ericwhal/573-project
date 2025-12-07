@@ -17,7 +17,6 @@ int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 
 void softmax_execute(const softmax_ctrl_struct *user_data, unsigned count) {
-  print_hex(count);
   *DST_PTR_REG = (unsigned) user_data->dest;
   *SRC_PTR_REG = (unsigned) user_data->src;
   *CTRL_REG    = (count*sizeof(float)) | (1 << 31);

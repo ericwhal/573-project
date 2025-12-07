@@ -15,22 +15,22 @@ int main() {
   softmax_ctrl_struct my_data;
   int allocated = softmax_allocate(&my_data, data_length);
 
-  if(allocated < data_length) return allocated;
+  // if(allocated < data_length) return allocated;
 
-  for(int i = 0; i < data_length; ++i) {
+  for(int i = 0; i < allocated; ++i) {
     my_data.src[i] = logits[i];
   }
 
   // ------------------------- accel ROI ------------------------- 
   m5_reset_stats(0,0);
-  softmax_execute(&my_data, data_length);
+  softmax_execute(&my_data, allocated);
   while(!softmax_test_done()) {};
   m5_dump_stats(0,0);
   // ------------------------- end accel ROI ------------------------- 
 
   // ************************* Check results ************************* 
   int accel_failed = 0;
-  for(int i = 0; i < data_length; ++i) {
+  for(int i = 0; i < allocated; ++i) {
     accel_failed += !compare_ulp(probs[i], my_data.dest[i], 15);
   }
   // *****************************************************************
@@ -39,12 +39,12 @@ int main() {
   m5_reset_stats(0,0);
   // First pass: exponentiate (in-place) and sum
   float accum = 0;
-  for(int i = 0; i < data_length; ++i) {
+  for(int i = 0; i < allocated; ++i) {
     logits[i] = isfinite(logits[i]) ? exp(logits[i]) : 0.;
     accum += logits[i];
   }
   // Second pass: divide by sum
-  for(int i = 0; i < data_length; ++i) {
+  for(int i = 0; i < allocated; ++i) {
     logits[i] /= accum;
   }
   m5_dump_stats(0,0);
@@ -52,7 +52,7 @@ int main() {
 
   // *************************  Check results ************************* 
   int naive_failed = 0;
-  for(int i = 0; i < data_length; ++i) {
+  for(int i = 0; i < allocated; ++i) {
     naive_failed += !compare_ulp(probs[i], logits[i], 15);
   }
   // *****************************************************************

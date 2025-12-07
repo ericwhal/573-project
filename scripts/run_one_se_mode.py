@@ -10,10 +10,16 @@ from m5.objects import (
 )
 
 # Return a dict of ordered lists of stats, in the encountered order
-# Specifically, system.cpu.numCycles, simInsts, simOps
 number_regex = re.compile(r'\d*\.?\d+')
+key_order = ['system.cpu.numCycles','simInsts','simOps'
+            ,'system.memcpy_accel.zeroCount'
+            ,'system.memcpy_accel.sameAdd'
+            ,'system.memcpy_accel.switchingAdd'
+            ,'system.memcpy_accel.sameDiv'
+            ,'system.memcpy_accel.switchingDiv'
+            ]
 def parse_stats(file):
-    stats = {'system.cpu.numCycles':[],'simInsts':[],'simOps':[]}
+    stats = {key:[] for key in key_order}
     with open(file, 'r') as f:
         for line in f.readlines():
             for key in stats.keys():
@@ -88,8 +94,8 @@ print(f"Exiting @ tick {m5.curTick()} because {exit_event.getCause()}")
 
 # Parse m5out, append to csv
 stats_dict = parse_stats(m5statsfile)
-strs = [stats_dict[key][0] for key in ['system.cpu.numCycles','simInsts','simOps']] +  \
-       [stats_dict[key][1] for key in ['system.cpu.numCycles','simInsts','simOps']]
+strs = [stats_dict[key][0] for key in key_order] +  \
+       [stats_dict[key][1] for key in key_order]
 with open(reportfile, 'a+') as f:
     f.write(',')
     f.write(','.join(strs))
