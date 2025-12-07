@@ -2,9 +2,6 @@
 #include <gem5/m5ops.h>
 #include <math.h>
 
-// We just need this symbol defined for math.h
-unsigned __errno;
-
 int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
   // if(!softmax_test_done()) return -1;
   int allocated = ACCEL_MEM_CAPACITY < count ? ACCEL_MEM_CAPACITY : count;
@@ -20,6 +17,7 @@ int softmax_allocate(softmax_ctrl_struct *user_data, unsigned count) {
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 
 void softmax_execute(const softmax_ctrl_struct *user_data, unsigned count) {
+  print_hex(count);
   *DST_PTR_REG = (unsigned) user_data->dest;
   *SRC_PTR_REG = (unsigned) user_data->src;
   *CTRL_REG    = (count*sizeof(float)) | (1 << 31);
@@ -60,9 +58,6 @@ void print_hex(uint32_t val)
 
 unsigned compare_ulp(float a, float b, unsigned ulp)
 {
-  // Return false if either is NAN or +/-inf
-  if(!(isfinite(a) && isfinite(b))) return 1;
-
   // bit cast
   unsigned *a_bits_ptr = (int*) &a;
   unsigned *b_bits_ptr = (int*) &b;

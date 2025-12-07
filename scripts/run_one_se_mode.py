@@ -40,7 +40,7 @@ system.mem_mode = "timing"
 #     AddrRange((0x40000000,0x60000000)),   # normal DRAM
 #     AddrRange((0x60000000,0x60000020))      # MemCpyAccel PIO registers
 # ]
-system.mem_ranges = [AddrRange(0xA0000000, size="512MiB")]
+system.mem_ranges = [AddrRange(0x80000000, size=0xC0000000-0x80000000)]
 
 system.cpu = RiscvTimingSimpleCPU()
 
@@ -76,9 +76,11 @@ root = Root(full_system=False, system=system)
 m5.instantiate()
 
 # map program memory
-system.cpu.workload[0].map(0x10000000, 0x10000000, 0x20000000, cacheable=True)
-system.cpu.workload[0].map(0xA0000000, 0xA0000000, 0x20000000, cacheable=True)
-system.cpu.workload[0].map(0xC0000000, 0xC0000000, 0x00000020, cacheable=False)
+system.cpu.workload[0].map(        0x10000000,         0x10000000, 0x20000000, cacheable=True)
+system.cpu.workload[0].map(0xFFFFFFFFF0000000,         0x80000000, 0x10000000, cacheable=True)
+system.cpu.workload[0].map(        0x00000000,         0x90000000, 0x00001000, cacheable=True)
+system.cpu.workload[0].map(        0xA0000000,         0xA0000000, 0x20000000, cacheable=True)
+system.cpu.workload[0].map(        0xC0000000,         0xC0000000, 0x00000020, cacheable=False)
 
 print("Beginning simulation!")
 exit_event = m5.simulate()

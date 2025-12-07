@@ -1,6 +1,8 @@
 import os
 import re
+import sys
 import json
+import tqdm
 import shutil
 import struct
 import subprocess
@@ -32,6 +34,7 @@ srcpath = os.path.join(thispath, "../src/")
 gem5_include_path = os.path.join(thispath, "../573-gem5/include/")
 gem5_path = os.path.join(thispath, "../573-gem5/build/RISCV/gem5.opt")
 run_one_path = os.path.join(thispath, "run_one_se_mode.py")
+# gem5_command = f"LD_LIBRARY_PATH=/lib/ {gem5_path} --debug-flags=MemCpyAccelDebug,PortTrace {run_one_path}"
 gem5_command = f"LD_LIBRARY_PATH=/lib/ {gem5_path} {run_one_path}"
 
 m5_ld_path = os.path.join(thispath, "../573-gem5/util/m5/build/riscv/out")
@@ -57,7 +60,7 @@ libs = ' '.join(['-lm', '-lc', '-lm5'])
 def get_records(logits, probs, num_records, max_records=100):
     if max_records is None:
         max_records = num_records
-    for record in range(min(max_records,num_records)):
+    for record in tqdm.trange(min(max_records,num_records)):
         # 32 bits of length
         # 32 bits of meta
         logits_length = int.from_bytes(logits.read(4), byteorder='little')
@@ -92,9 +95,9 @@ def parallel_worker(*args, datapath=None):
     os.makedirs(threadlocaldir, exist_ok=True)
 
     with open(os.path.join(threadlocaldir, 'data.h'), 'w') as header:
-        header.write(f'int data_length = {record_len};\n')
-        header.write(f'float logits[{len(logit_record)}] =' + '{' + ', '.join([str(f) for f in logit_record]) + '};\n')
-        header.write(f'float probs[{len(prob_record)}] =' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
+        header.write(f'#define data_length {record_len}\n')
+        header.write(f'float logits[{len(logit_record)}] = ' + '{' + ', '.join([str(f) for f in logit_record]) + '};\n')
+        header.write(f'float probs[{len(prob_record)}] = ' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
 
     build_file = os.path.join(threadlocaldir, f'eval')
     include_flags = ' '.join(['-I' + path for path in [threadlocaldir, srcpath, gem5_include_path]])
@@ -111,7 +114,7 @@ def parallel_worker(*args, datapath=None):
         f.write(','.join(strs))
 
     # run gem5
-    result = subprocess.run([gem5_command], shell=True, cwd=threadlocaldir, capture_output=True, text=True)
+    result = subprocess.run([gem5_command], shell=True, cwd=threadlocaldir, capture_output=True, text=True, encoding='latin-1')
     exit_code = exit_code_re.search(result.stdout)
     with open(localreportfile, 'a+') as f:
         if exit_code is None:
@@ -128,7 +131,7 @@ def parallel_worker(*args, datapath=None):
           print(result.stdout)
           print('------------------------------')
           print(result.stderr)
-          print('==============================', True)
+          print('==============================', flush=True)
         else:
           f.write(',' + exit_code.group(1))
     return threadlocaldir
@@ -138,6 +141,11 @@ def parallel_worker(*args, datapath=None):
 # Main
 #==================================================
 # iterate over workload types
+# One configurable setting, maximum number of records to read per file
+max_records = None
+if len(sys.argv) > 1:
+    max_records = int(sys.argv[1])
+
 for datapath in source_datapaths:
     logit_filepath = os.path.join(datapath, "logits.bin")
     probs_filepath = os.path.join(datapath, "probs.bin")
@@ -155,7 +163,7 @@ for datapath in source_datapaths:
             return parallel_worker(*x, datapath=datapath)
 
         with multiprocessing.Pool(None) as p:
-            workdirs = set(p.starmap(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=None), chunksize=50))
+            workdirs = set(p.starmap(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=max_records), chunksize=50 if max_records is None else max(1, max_records//16)))
         print('Done work in:')
         print(workdirs)
         print('-------------')

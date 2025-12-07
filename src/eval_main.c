@@ -4,9 +4,10 @@
 
 // The following header contains three values: two arrays of floats labeled logits and probs, and the (shared) length of the arrays.
 // IT IS A GENERATED HEADER BY THE EVAL SCRIPT
+// We have to use a macro for data_length because otherwise the compiler freaks
+// #define data_length ...;
 // float probs[] = { ... };
 // float logits[] = { ... };
-// int data_length = ...;
 #include "data.h"
 
 int main() {
@@ -39,7 +40,7 @@ int main() {
   // First pass: exponentiate (in-place) and sum
   float accum = 0;
   for(int i = 0; i < data_length; ++i) {
-    logits[i] = exp(logits[i]);
+    logits[i] = isfinite(logits[i]) ? exp(logits[i]) : 0.;
     accum += logits[i];
   }
   // Second pass: divide by sum
