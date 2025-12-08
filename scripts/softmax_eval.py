@@ -52,12 +52,7 @@ with open(reportfile, 'w') as f:
 
 eval_main_file = os.path.join(srcpath, "eval_main.c")
 naive_main_file = os.path.join(srcpath, "eval_naive_main.c")
-main_files = [eval_main_file]*2 + [naive_main_file]
-run_kinds = ['accel-opt','accel-unopt','naive']
 
-run_idx = 1
-main_file = main_files[run_idx]
-run_kind = run_kinds[run_idx]
 
 softmaxlib_file = os.path.join(srcpath, "softmaxlib.c")
 
@@ -152,9 +147,18 @@ def parallel_worker(*args, datapath=None):
 #==================================================
 # iterate over workload types
 # One configurable setting, maximum number of records to read per file
+main_files = [eval_main_file]*2 + [naive_main_file]
+run_kinds = ['accel-opt','accel-unopt','naive']
+if len(sys.argv) == 1:
+    print('Usage: python3 {__file__} opt_level [max_records]')
+    exit()
+run_idx = int(sys.argv[1])
+main_file = main_files[run_idx]
+run_kind = run_kinds[run_idx]
+
 max_records = None
-if len(sys.argv) > 1:
-    max_records = int(sys.argv[1])
+if len(sys.argv) > 2:
+    max_records = int(sys.argv[2])
 
 for datapath in source_datapaths:
     logit_filepath = os.path.join(datapath, "logits.bin")
@@ -188,3 +192,7 @@ for datapath in source_datapaths:
 
                 # remove the workdir
                 shutil.rmtree(d)
+
+result_file = os.path.join(buildpath, '../data/' + run_kind + '_' + str(max_records) + '.csv')
+shutil.copy(reportfile, result_file)
+print('Results recorded in',result_file)
