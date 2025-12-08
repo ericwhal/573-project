@@ -81,7 +81,7 @@ Exiting @ tick 3697207000 because exiting with last active thread context
 ```
 6. This lets us know that gem5 is compiled for the _unoptimized_ accelerator. If the Cutoff grows beyond -inf, we have compiled for the _optimized_ workload.
 7. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 1` for a full unoptimized evaluation. Copy the path of the final reported file.
-   a. Modify gem5 by navigating to `573-gem5/src/dev/acc/`, opening `memcpyaccel.cc` and replacing `constexpr float cutoff` with either negative infinity (unoptimized) or -149.0 (optimized).
+   - Modify gem5 by navigating to `573-gem5/src/dev/acc/`, opening `memcpyaccel.cc` and replacing `constexpr float cutoff` with either negative infinity (unoptimized) or -149.0 (optimized).
 8. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 0` for a full optimized evaluation. Copy the path of the final reported file.
 9. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 2` for a full naive evaluation. This will take a long time. Copy the path of the final reported file.
 10. Generate charts by running `./scripts/plot_stacks_from_csv.py OPTIMIZED_CSV UNOPTIMIZED_CSV NAIVE_CSV`. The three `.csv`s should be in `$GIT_ROOT/data/`. The images will be saved to `$GIT_ROOT/figures/`.
