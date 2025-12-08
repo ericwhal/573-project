@@ -280,7 +280,7 @@
                     "name": "workload",
                     "path": "system.cpu.workload",
                     "cmd": [
-                        "/media/oldhdd/573-project/573-gem5/src/dev/acc/../../../cycle_test.elf"
+                        "/media/oldhdd/573-project/573-gem5/src/dev/acc/../../../../build/big_test"
                     ],
                     "cwd": "/media/oldhdd/573-project",
                     "drivers": [],

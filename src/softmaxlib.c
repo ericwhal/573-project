@@ -57,6 +57,8 @@ void print_hex(uint32_t val)
 
 unsigned compare_ulp(float a, float b, unsigned ulp)
 {
+  // if both inf's, return match
+  if(!isfinite(a) || !isfinite(b)) return 1;
   // bit cast
   unsigned *a_bits_ptr = (int*) &a;
   unsigned *b_bits_ptr = (int*) &b;

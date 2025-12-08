@@ -10,11 +10,12 @@ filepath = os.path.abspath(sys.argv[1])
 
 # Read in the data, dropping rows with empty data
 df = pd.read_csv(filepath).dropna()
-failcodes = df.exit_code.str.extract(r'0x(?P<accel_mismatch>[0-9a-fA-F]{4})(?P<naive_mismatch>[0-9a-fA-F]{4})').map(lambda x:int(x,16))
+failcodes = df.exit_code.str.extract(r'0x(?P<naive_mismatch>[0-9a-fA-F]{4})(?P<accel_mismatch>[0-9a-fA-F]{4})').map(lambda x:int(x,16))
 df = pd.concat([df,failcodes],axis=1)
 # df = df.groupby('name').sample(n=10000, replace=False)
 
 print(df.head())
+print(df.describe())
 
 # calculate interesting statistics per sample
 # % speedup

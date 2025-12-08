@@ -35,28 +35,6 @@ int main() {
   }
   // *****************************************************************
 
-  // ------------------------- naive ROI ------------------------- 
-  m5_reset_stats(0,0);
-  // First pass: exponentiate (in-place) and sum
-  float accum = 0;
-  for(int i = 0; i < allocated; ++i) {
-    logits[i] = isfinite(logits[i]) ? exp(logits[i]) : 0.;
-    accum += logits[i];
-  }
-  // Second pass: divide by sum
-  for(int i = 0; i < allocated; ++i) {
-    logits[i] /= accum;
-  }
-  m5_dump_stats(0,0);
-  // ------------------------- end naive ROI ------------------------- 
-
-  // *************************  Check results ************************* 
-  int naive_failed = 0;
-  for(int i = 0; i < allocated; ++i) {
-    naive_failed += !compare_ulp(probs[i], logits[i], 15);
-  }
-  // *****************************************************************
-
   // return code: naive_failed in upper half, accel in lower half
-  return (naive_failed << 16) | accel_failed;
+  return accel_failed;
 }

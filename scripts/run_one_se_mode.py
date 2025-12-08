@@ -94,8 +94,9 @@ print(f"Exiting @ tick {m5.curTick()} because {exit_event.getCause()}")
 
 # Parse m5out, append to csv
 stats_dict = parse_stats(m5statsfile)
-strs = [stats_dict[key][0] for key in key_order] +  \
-       [stats_dict[key][1] for key in key_order]
+strs = [stats_dict[key][0] for key in key_order]
+for i in range(1, len(stats_dict['simOps'])):
+    strs += [stats_dict[key][i] for key in key_order]
 with open(reportfile, 'a+') as f:
     f.write(',')
     f.write(','.join(strs))

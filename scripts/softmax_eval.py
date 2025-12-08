@@ -41,16 +41,24 @@ m5_ld_path = os.path.join(thispath, "../573-gem5/util/m5/build/riscv/out")
 buildpath = os.path.join(thispath, "../build/")
 databasedir = os.path.join(thispath, "../data/data/")
 datadirs = [datadir for datadir in os.listdir(databasedir) if os.path.isdir(os.path.join(databasedir, datadir))]
+source_datapaths = [os.path.join(databasedir, datadir) for datadir in datadirs]
 
 reportfile = os.path.join(buildpath, "stats.csv")
 
 # Write the csv header to the report file
 # Ordered as accel, naive
 with open(reportfile, 'w') as f:
-    f.write("name,record,record_len,accel-system.cpu.numCycles,accel-simInsts,accel-simOps,accel-zeroCount,accel-sameAdd,accel-switchingAdd,accel-sameDiv,accel-switchingDiv,naive-system.cpu.numCycles,naive-simInsts,naive-simOps,naive-zeroCount,naive-sameAdd,naive-switchingAdd,naive-sameDiv,naive-switchingDiv,exit_code")
+    f.write("name,accel,record,record_len,system.cpu.numCycles,simInsts,simOps,zeroCount,sameAdd,switchingAdd,sameDiv,switchingDiv,exit_code")
 
-source_datapaths = [os.path.join(databasedir, datadir) for datadir in datadirs]
-main_file = os.path.join(srcpath, "eval_main.c")
+eval_main_file = os.path.join(srcpath, "eval_main.c")
+naive_main_file = os.path.join(srcpath, "eval_naive_main.c")
+main_files = [eval_main_file]*2 + [naive_main_file]
+run_kinds = ['accel-opt','accel-unopt','naive']
+
+run_idx = 0
+main_file = main_files[run_idx]
+run_kind = run_kinds[run_idx]
+
 softmaxlib_file = os.path.join(srcpath, "softmaxlib.c")
 
 compiler_flags = '-static -nostdlib -O2'
@@ -107,7 +115,7 @@ def parallel_worker(*args, datapath=None):
     subprocess.run(compile_command, shell=True)
 
     # prep reportfile with record & datapath after compile
-    strs = [os.path.basename(datapath), str(record), str(record_len)]
+    strs = [os.path.basename(datapath), run_kind, str(record), str(record_len)]
     localreportfile = os.path.join(threadlocaldir, "stats.csv")
     with open(localreportfile, 'a+') as f:
         f.write('\n')
@@ -118,7 +126,7 @@ def parallel_worker(*args, datapath=None):
     exit_code = exit_code_re.search(result.stdout)
     with open(localreportfile, 'a+') as f:
         if exit_code is None:
-          f.write(','*16+'CRASHED')
+          f.write(','*11+'CRASHED')
           if os.path.basename(datapath) in crashing_files:
               return threadlocaldir
           crashing_files.add(os.path.basename(datapath))
@@ -164,7 +172,7 @@ for datapath in source_datapaths:
 
         # Using the unordered imap lazily consumes from get_records, which in turn enables tqdm to track time accurately. Starmap isn't lazy.
         with multiprocessing.Pool(None) as p:
-            workdirs = set(p.imap_unordered(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=max_records), chunksize=50 if max_records is None else max(1, max_records//16)))
+            workdirs = set(p.imap_unordered(parallel_worker_wrap, get_records(logit_file, probs_file, num_records, max_records=max_records), chunksize=50 if max_records is None else min(50, max(1, max_records//16))))
 
         print(f'Collecting data from {len(workdirs) - (1 if None in workdirs else 0)} workers')
         with open(reportfile, 'a+') as report:
