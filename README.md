@@ -41,7 +41,7 @@ $ git submodule update --init --depth 1
 ```
 2. Install the riscv64-unknown-linux-gnu toolchain by following the instructions in `$GIT_ROOT/riscv-gnu-toolchain/README.md` and running `make linux`.
 3. Compile gem5 following the instructions in `573-gem5/README.md`. Use the gem5 virutal environment for the rest of the project.
-4. Compile m5ops using the (instructions.)[https://www.gem5.org/documentation/general_docs/m5ops/]
+4. Compile m5ops using the [instructions.](https://www.gem5.org/documentation/general_docs/m5ops/)
 5. Test the toolchain by navigating to `$GIT_ROOT` and running `./scripts/build_and_run.sh`. This should compile and run a short executable on gem5 in debug mode. Truncated sample output:
 ```
 [...]
