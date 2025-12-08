@@ -55,7 +55,7 @@ naive_main_file = os.path.join(srcpath, "eval_naive_main.c")
 main_files = [eval_main_file]*2 + [naive_main_file]
 run_kinds = ['accel-opt','accel-unopt','naive']
 
-run_idx = 0
+run_idx = 1
 main_file = main_files[run_idx]
 run_kind = run_kinds[run_idx]
 
@@ -80,8 +80,9 @@ def get_records(logits, probs, num_records, max_records=100):
         _ = logits.read(4), probs.read(4)
 
         logits_floats = struct.unpack(f'{logits_length}f', logits.read(logits_length*4))
-        probs_floats = struct.unpack(f'{probs_length}f', probs.read(probs_length*4))
-        yield record, logits_length, logits_floats, probs_floats
+        # probs_floats = struct.unpack(f'{probs_length}f', probs.read(probs_length*4))
+        _ = probs.read(probs_length*4)
+        yield record, logits_length, logits_floats # , probs_floats
 
 
 # These get *copied* to the parallel_worker context!
@@ -95,7 +96,8 @@ def parallel_worker(*args, datapath=None):
         return None
 
     # unpack args
-    record, record_len, logit_record, prob_record = args
+    # record, record_len, logit_record, prob_record = args
+    record, record_len, logit_record = args
 
     # make sure threadlocaldir exists
     thread_id = str(multiprocessing.current_process().pid)
@@ -105,7 +107,7 @@ def parallel_worker(*args, datapath=None):
     with open(os.path.join(threadlocaldir, 'data.h'), 'w') as header:
         header.write(f'#define data_length {record_len}\n')
         header.write(f'float logits[{len(logit_record)}] = ' + '{' + ', '.join([str(f) for f in logit_record]) + '};\n')
-        header.write(f'float probs[{len(prob_record)}] = ' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
+        # header.write(f'float probs[{len(prob_record)}] = ' + '{' + ', '.join([str(f) for f in prob_record]) + '};\n')
 
     build_file = os.path.join(threadlocaldir, f'eval')
     include_flags = ' '.join(['-I' + path for path in [threadlocaldir, srcpath, gem5_include_path]])
