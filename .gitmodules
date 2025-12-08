@@ -5,3 +5,6 @@
 	path = 573-gem5
 	url = git@github.com:emilyyysu/573-gem5.git
 	branch = accel
+[submodule "573-softmax-verilog"]
+	path = 573-softmax-verilog
+	url = git@github.com:liuzhilin371/573-softmax-verilog.git
