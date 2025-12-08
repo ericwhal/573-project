@@ -4,20 +4,20 @@ Parent repo for our ECE573 project.
 ## Repo Structure
 ```
 $GIT_ROOT/
-  > 573_gem5                      # Our modified gem5 (collected as submodule)
-  > 573-softmax-verilog           # Our RTL (collected as submodule)
-  > riscv-gnu-toolchain           # The SiFive riscv toolchain (collected as submodule)
-  > data                          # Empty directory for data
-    [>] data                      # Directory you will unzip the datasets into
-      [>] cifar100_vitb           # CIFAR dataset with 100 labels
-      [>] cifar10_vitb            # CIFAR dataset with 10 labels
-      [>] imagenet1k_vitb         # Imagenet dataset with 1000 labels
-      [>] wt103_gpt2              # NLP dataset with 50257 labels
-  > scripts                       # Holds scripts (all to be run from GIT_ROOT)
-  > src                           # C source and header files for benchmarking and testing
- [>]build                         # Directory created by script(s) for build and run.
- [>]figures                       # Directory created by script(s) for figures.
- [>]riscv64-unknown-gnu-linux     # Recommended (but not required) directory for installing the riscv64 toolchain. Remember to add to $PATH!
+  > 573_gem5/                     # Our modified gem5 (collected as submodule)
+  > 573-softmax-verilog/          # Our RTL (collected as submodule)
+  > riscv-gnu-toolchain/          # The RISCV collaboration toolchain (collected as submodule)
+  > data/                         # Empty directory for data
+    [>] data/                     # Directory you will unzip the datasets into
+      [>] cifar100_vitb/          # CIFAR dataset with 100 labels
+      [>] cifar10_vitb/           # CIFAR dataset with 10 labels
+      [>] imagenet1k_vitb/        # Imagenet dataset with 1000 labels
+      [>] wt103_gpt2/             # NLP dataset with 50257 labels
+  > scripts/                      # Holds scripts (all to be run from GIT_ROOT)
+  > src/                          # C source and header files for benchmarking and testing
+ [>]build/                        # Directory created by script(s) for build and run.
+ [>]figures/                      # Directory created by script(s) for figures.
+ [>]riscv64-unknown-gnu-linux/    # Recommended (but not required) directory for installing the riscv64 toolchain. Remember to add the bin subdir of the install path to your $PATH!
 ```
 
 ## Build prerequisites
