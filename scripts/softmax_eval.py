@@ -28,7 +28,8 @@ import multiprocessing
 #   /scripts/THIS_FILE
 #   /src/
 #   /build
-#      /DATA_DIRS/
+#      /THREAD_LOCAL_DIRS/
+#   /data/data/DATASETS
 thispath = os.path.dirname(os.path.realpath(__file__))
 srcpath = os.path.join(thispath, "../src/")
 gem5_include_path = os.path.join(thispath, "../573-gem5/include/")

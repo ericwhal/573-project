@@ -8,6 +8,11 @@ $GIT_ROOT/
   > 573-softmax-verilog           # Our RTL (collected as submodule)
   > riscv-gnu-toolchain           # The SiFive riscv toolchain (collected as submodule)
   > data                          # Empty directory for data
+    [>] data                      # Directory you will unzip the datasets into
+      [>] cifar100_vitb           # CIFAR dataset with 100 labels
+      [>] cifar10_vitb            # CIFAR dataset with 10 labels
+      [>] imagenet1k_vitb         # Imagenet dataset with 1000 labels
+      [>] wt103_gpt2              # NLP dataset with 50257 labels
   > scripts                       # Holds scripts (all to be run from GIT_ROOT)
   > src                           # C source and header files for benchmarking and testing
  [>]build                         # Directory created by script(s) for build and run.
@@ -15,14 +20,19 @@ $GIT_ROOT/
  [>]riscv64-unknown-gnu-linux     # Recommended (but not required) directory for installing the riscv64 toolchain. Remember to add to $PATH!
 ```
 
-## NIX [nixos.org](https://nixos.org/)
-Used to create a repeatable environment. Nix is not mandatory, but will make dependency collection easier.
-
-## DATA
-Download data from [here](https://drive.google.com/drive/folders/1iJfnUBAFhoRsth77pEQ2_yc-zqt8Hbdk?usp=drive_link) into a directory named 'data', then unzip. The final directory structure after unpacking should be `$GIT_ROOT/data/data/<dataset>/`.
-
 ## Build prerequisites
-If you are using Nix, `nix-shell` will create a new shell with all necessary dependencies. Otherwise, follow the instructions for each submodule. All python dependencies can be freely installed into the gem5 virtual environment.
+1. Make sure to run in a linux environment compatible with gem5.
+2. If you are using Nix, `nix-shell` will create a new shell with all necessary dependencies. Otherwise, follow the instructions for each submodule. 
+3. Create a python virtual environment, activate it, and install `requirements.txt`.
+4. Run `$export GIT_ROOT=$(git rev-parse --show-toplevel)` (or remember to this directory). No scripts depend on this environment variable, it is purely a convenience for the instructions below.
+5. Prepare the data directory.
+
+### DATA
+Download data from [here](https://drive.google.com/drive/folders/1iJfnUBAFhoRsth77pEQ2_yc-zqt8Hbdk?usp=drive_link) into a directory named 'data', then unzip. The final directory structure after decompressing should be `$GIT_ROOT/data/data/<dataset>/`.
+The evaluation script dynamically collects available datasets, so if you want to skip one simply don't unzip it.
+
+### NIX [nixos.org](https://nixos.org/)
+Used to create a repeatable environment. Nix is not mandatory, but will make dependency collection easier.
 
 ## Build and run instructions
 1. Initialize submodules
@@ -70,9 +80,9 @@ Done.
 Exiting @ tick 3697207000 because exiting with last active thread context
 ```
 6. This lets us know that gem5 is compiled for the _unoptimized_ accelerator. If the Cutoff grows beyond -inf, we have compiled for the _optimized_ workload.
-7. Run `python3 scripts/softmax_eval.py 1` for a full unoptimized evaluation. Copy the path of the final reported file.
-  a. Modify gem5 by navigating to `573-gem5/src/dev/acc/`, opening `memcpyaccel.cc` and replacing `constexpr float cutoff` with either negative infinity (unoptimized) or -149.0 (optimized).
-8. Run `python3 scripts/softmax_eval.py 0` for a full optimized evaluation. Copy the path of the final reported file.
-9. Run `python3 scripts/softmax_eval.py 2` for a full naive evaluation. This will take a long time. Copy the path of the final reported file.
+7. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 1` for a full unoptimized evaluation. Copy the path of the final reported file.
+   a. Modify gem5 by navigating to `573-gem5/src/dev/acc/`, opening `memcpyaccel.cc` and replacing `constexpr float cutoff` with either negative infinity (unoptimized) or -149.0 (optimized).
+8. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 0` for a full optimized evaluation. Copy the path of the final reported file.
+9. Navigate to `$GIT_ROOT`. Run `python3 scripts/softmax_eval.py 2` for a full naive evaluation. This will take a long time. Copy the path of the final reported file.
 10. Generate charts by running `./scripts/plot_stacks_from_csv.py OPTIMIZED_CSV UNOPTIMIZED_CSV NAIVE_CSV`. The three `.csv`s should be in `$GIT_ROOT/data/`. The images will be saved to `$GIT_ROOT/figures/`.
 11. Navigate to `$GIT_ROOT/573-softmax-verilog` and follow the README.md to get power numbers (our results hardcoded into `plot_stacks_from_csv.py`)
