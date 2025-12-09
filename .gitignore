@@ -2,5 +2,9 @@ build/**
 riscv32-unknown-gnu-linux/**
 riscv64-unknown-gnu-linux/**
 m5out/*
-data/**
 figures/*
+data/data/**
+
+*.csv
+*.bin
+*.zip

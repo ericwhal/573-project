@@ -30,6 +30,7 @@ $GIT_ROOT/
 ### DATA
 Download data from [here](https://drive.google.com/drive/folders/1iJfnUBAFhoRsth77pEQ2_yc-zqt8Hbdk?usp=drive_link) into a directory named 'data', then unzip. The final directory structure after decompressing should be `$GIT_ROOT/data/data/<dataset>/`.
 The evaluation script dynamically collects available datasets, so if you want to skip one simply don't unzip it.
+Alternately, run the scripts in `scripts/gen_data` to collect data.
 
 ### NIX [nixos.org](https://nixos.org/)
 Used to create a repeatable environment. Nix is not mandatory, but will make dependency collection easier.
